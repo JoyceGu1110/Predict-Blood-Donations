@@ -38,6 +38,6 @@ Use R programming to explore blood donation data and predict the likelihood of a
     * Conclusion 
 
 ## File Descriptions
- * ./Data.xlsx is the given dataset I worked on. 
+ * ./Data.xlsx is the given dataset to work on. 
  * ./Data_Scientist_Case_Study_2_Instructions.odt contains the problem, dataset information and attribute information. 
- * ./ Raw Code.Rmd is a R notebook contains all the code I worked using R programming. 
+ * ./ Raw Code.Rmd is a R notebook contains all the code when conducting the analysis using R programming. 
