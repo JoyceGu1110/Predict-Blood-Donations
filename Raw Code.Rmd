@@ -1,0 +1,247 @@
+---
+title: "<center><b>Predicting Blood Donations </b></center>"
+output:
+  html_notebook: default
+  word_document: default
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+<span style="color:steelblue;" > Problem </span>
+------------------------------
+Create a model which will predict the likelihood of a donator donating again from the given data set. 
+
+
+<span style="color:steelblue;" > Dataset Infromation </span>
+-------------------------------
+There are five variables in the data set. The order of this listing corresponds to the order of numerals along the rows of the database. 
+
+R(Recency - months since last donation)  
+F(Frequency - total number of donation)  
+M(Monetary - total blood donated in c.c.)  
+T(Time - months since first donation)  
+Whether he/she donated blood in May 2018 (A binary variable; 1 stand for donating blood and 0 stands for not donating blood)
+
+Since the volume of blood donated is always the same per person and per donation, the feature: “Total Volume Donated (c.c.)” (Monetary) is exactly proportional to the “Number of Donations” (Frequency) with Monetary = 250 * Frequency. The donors gave 250 c.c. of blood each time.
+
+<span style="color:steelblue;" > Load the Dataset into R Studio </span>
+--------------------------------------------
+### Download the R Studio 
+Since the analysis is based on R programming, it is better to have the R studio installed if you want to run the code. You can download the R studio [here](https://rstudio.com/products/rstudio/download/#download).   
+1. Choose the download file fitting for your operating system.  
+2. Follow the instructions to finish the installment. 
+
+### Working Directory  
+After intalling the R studio, the working directory can be set by using 'setwd()', which would enable you to access the data from the specific destinition. The working directory could also be checked by using 'getwd()'. 
+
+```{r}
+setwd('C:/Users/gym94/Desktop/R/Test')
+getwd()
+```
+In here, the working directory has been set to the 'Test' file successfully. 
+
+### Loading the Data 
+```{r}
+# Load the Excel data
+Data<- readxl::read_xlsx('data.xlsx')
+str(Data)
+```
+Variables' name have been changed to be easier called in the further analysis. 
+```{r}
+# Simplify the variables' names in the dataset
+Data_new <- data.frame(R = Data$`Recency (months)`, F = Data$`Frequency (times)`, M = Data$`Monetary (c.c. blood)`, T = Data$`Time (months)`, W = Data$`whether he/she donated blood in May 2018`)
+str(Data_new)  
+```
+### Import Libraries 
+It is needed to install some packages in the R studio to make use of them to conduct the analysis. The following packages have been installed before the analysis：
+```{r}
+# Install the necessary packages 
+install.packages('ggplot2')
+install.packages('corrplot')
+install.packages('car')
+install.packages('caret')
+```
+
+<span style="color:steelblue;" > Exploratory Data Analysis: </span>
+--------------------------------------------------------------------
+### Missing Values
+
+```{r}
+# Five-number summary  
+summary(Data_new)
+# Null value detection
+sum(is.na(Data_new))
+```
+A five-number summary is conducted to have a brief view of the median, the first and third quartiles, the minimum and maximum of the five variables. Also, it is checked that whether there are missing values in the data set and it is found there is no missing value in the data. Outliers will be identified in the following corresponding parts according to boxplots. 
+
+### About Months Since Last Donation (R)
+#### Boxplot of the Months Since Last Donation 
+```{r}
+library(ggplot2)
+# Turn the 'whether he/she donated blood in May 2018' variable into a factor variable
+Data_new$response = as.factor(Data_new$W)
+# Create boxplot to identify outliers for the variable R
+ggplot(Data_new, aes(x='', y= R)) + geom_boxplot() + ylab('Months since last donation') 
+```
+#### Density Plot of the Months Since the Last Donation 
+```{r}
+# Create density plot to observe the data distribution for the variable R  
+plot(density(Data_new$R))
+```
+#### Boxplot of the Months Since the Last Donation Based on Whether Donated Blood in May 2018
+```{r}
+# Create boxplot to observe the data difference about variable R between donate and didn't donate in May 2018 
+boxplot(R ~ response, varwidth = TRUE, data = Data_new, horizational = TRUE)
+```
+#### Findings:  
+The mean of the variable ‘month since the last donation’ is 9.507 months, the median is 7 months, the minimum is 0 months and the maximum is 74 months. It can be found that there is a skewness towards the fewer months between two donations. Also, the mean of who donated blood in May 2018 is smaller than those who didn’t, with a smaller range. There are two outliers in the boxplot.  However, since the sample is not large enough, we cannot exculde them for now.   
+
+### About Number of Donations (F)
+#### Boxplot of the total number of donation 
+```{r}
+# Create boxplot to identify outliers for the variable F
+ggplot(Data_new, aes(x='', y = F)) + geom_boxplot() + ylab('Total blood donation in c.c.')
+```
+#### Density Plot of the Total Number of Donation 
+```{r}
+# Create density plot to observe the data distribution for the variable F
+plot(density(Data_new$F))
+```
+#### Boxplot of the Total Number of Donation Based on Whether Donated in May 2018 
+```{r}
+# Create boxplot to observe the data difference about variable F between donate and didn't donate in May 2018
+boxplot(F ~ response, varwidth = TRUE, data = Data_new, horizational = TRUE)
+```
+#### Findings
+The mean of the total number of donation is 5.515, the median is 4, the minimum is 1 and the maximum is 50. There is a skewness towards the less total number of donation. Those who made donated May 2018 has a higher mean than those didn’t, with a wider range. There are a few outliers in the boxplot. However, since the sample is not large enough, we cannot exculde them for now.   
+
+### About Total Blood Donated in c.c. (M)
+#### Boxplot of the total blood donated in c.c. 
+```{r}
+# Create boxplot to identify outliers for the variable M
+ggplot(Data_new, aes(x='', y = M)) + geom_boxplot() + ylab('Total blood donation in c.c.')
+```
+#### Density plot of the total blood donated in c.c.
+```{r}
+# Create density plot to observe the data distribution for the variable M
+plot(density(Data_new$M))
+```
+#### Boxplot of the Total Blood Donated in c.c. Based on Whether Donated Blood in May 2018
+```{r}
+# Create boxplot to observe the data difference about variable M between donate and didn't donate in May 2018
+boxplot(M ~ response, varwidth = TRUE, data = Data_new, horizational = TRUE)
+```
+#### Findings 
+The mean of the total blood donated in c.c. is 1379 cc, the median is 1000 cc, the minimum is 250 cc and the maximum is 12500 cc. There is a skewness towards the less total blood donated in c.c. Those who donated blood in May 2018 has a higher mean than those didn’t, with a wider range. There are a few outliers in the boxplot.  However, since the sample is not large enough, we cannot exculde them for now.   
+
+### About Months Since First Donation (T)
+#### Boxplot of Months Since the First Donation
+```{r}
+# Create boxplot to identify outliers for the variable T
+ggplot(Data_new, aes(x='', y = T)) + geom_boxplot() + ylab('Months since first donation')
+```
+#### Density Plot of Months Since the First Donation
+```{r}
+# Create density plot to observe the data distribution for the variable T
+plot(density(Data_new$T))
+```
+#### Boxplot of Months Since the First Donation Based on Whether Donated Blood in May 2018
+```{r}
+# Create boxplot to observe the data difference about variable T between donate and didn't donate in May 2018
+boxplot(M ~ response, varwidth = TRUE, data = Data_new, horizational = TRUE)
+```
+#### Findings 
+The mean of the months since the first donation is 34.28, the median is 28, the minimum is 2 and the maximum is 98. The shape of the variable is almost like a bell shape. Those who donated blood in May 2018 has a higher mean than those who didn’t, with a wider range. There is no outliers according to the boxplot. 
+
+### About Whether Made Donation in May 2018 (W)
+#### Bar Chart of Made Donations in May 2018 
+```{r}
+# Create bar graph to observe the difference between the response variable 
+ggplot(Data_new, aes(response)) + geom_bar() + ggtitle('Bar graph of the response variable')
+```
+#### Findings: 
+It can be seen that there are more instances of those who made donations in May 2018 compared with those who didn’t. 
+
+<span style="color:steelblue;" > Correlation Analysis </span>
+---------------------------------------------------------
+#### Scatterplot Matrix 
+```{r}
+#Check library car
+library(car)
+#Create the scatterplot matrix between the four variables and the response variable 
+scatterplotMatrix(~R+F+M+T+W|response, data = Data_new, main = 'Scatterplot Matrix')
+```
+#### Correlation Matrix 
+```{r}
+# Check library corrplot 
+library(corrplot)
+# Create the correlation matrix among the R,F,M,T four variables 
+correlations <- cor(Data_new[,1:4])
+corrplot(correlations)
+```
+#### Findings: 
+It is found that the total number of donation (F) and total blood donated in c.c. (M) have strong positive relationships with each other, which confirms that Monetary = 250 * Frequency. The total number of donation (F) and months since the first donation (T) have weak positive relationships with each other. Total blood donated in c.c. (M) and months since the first donation (T) have weak positive relationships with each other. 
+While the total number of donation (F) and total blood donated in c.c. (M) have weak negative relationships with each other. 
+
+<span style="color:steelblue;" > Models </span>
+------------------------------------------------
+#### Split Data 
+Split the data randomly into 80% (used to train and validation) and 20% (used to test with unseen data). It can be seen that 600 out of 748 are splited as the training set and 148 out of 748 are splited as the testing set. 
+```{r}
+sub_Data = subset(Data_new, select = Data_new$W)
+# Set the seed of the random number generator 
+set.seed(123)
+library(caret)
+# Separate the training dataset and testing dataset with the percentage of 80% 
+intrain <- createDataPartition(y = c(sub_Data$response, sub_Data$R), p = .8, list=FALSE)
+training = sub_Data[intrain,]
+testing = sub_Data[-intrain,]
+# Check the separated dataset
+dim(training)
+dim(testing)
+```
+#### Cross Validation Models 
+Two models are adopted in the training section, which is the k-nearest neighbors (KNN) model and the logistic regression model.  
+Logistic regression is a predictive modelling for the binary classification problems. As the result we want to get (whether the donator will donate again) is  binary variable, the logestic regression could be a good fit. 
+The k-nearest neighbors (KNN) model is also widely used to solve classification problems and it is simple and easy-to-implement. Though the prediction stage of the The k-nearest neighbors (KNN) model is a little bit slow, it could provide results with high accuracy. 
+The 5-fold cross validation is also conducted to estimate how the models will perform in general when used to make predictions based on the limited sample data. The reason the 5-fold cross validation is chosen is because we split 80% of our data in the training set compared with 20% of data in the testing set. 
+
+```{r}
+set.seed(1753)
+Data_new2<-Data_new[intrain,]
+training$response<-Data_new2$response
+# Cross validate model with 5-fold 
+train_control<-trainControl(method = 'cv',number = 5)
+# Train the training dataset with the KNN model 
+modknn1 = train (response ~ .,data = training, 
+                 method = 'knn', 
+                 na.action=na.omit,
+                 trControl=train_control,
+                 preProcess = c('center','scale'), 
+                 tuneLength = 20)
+# Train the training dataset wuth the logistic regression model 
+modlogistic = train (response ~ .,data = training, 
+               method = 'glm', 
+               family = 'binomial', 
+               trControl=train_control,
+               na.action = na.omit)
+```
+
+#### Model Testing 
+The prediction power of the two models are tested with the confusion matrix, which could describe the prediction performance of models on the testing data sets.  
+
+```{r}
+# Test the prediction power of KNN model and create the confusion matrix 
+predknn<-predict(modknn1,testing)
+confusionMatrix(predknn,Data_new[-intrain,'response'])
+```
+
+```{r}
+# Test the prediction power of logistic regression model and create the confusion matrix
+predlogistic<-predict(modlogistic,testing)
+confusionMatrix(predlogistic,Data_new[-intrain,'response'])
+```
+<span style="color:steelblue;" > Conclusion </span>
+---------------------------------------------------------
+Since the accuracy of two models are the same (83.11%) based on the confusion matrix results, both the k-nearest neighbors (KNN) model and the logistic regression model can be used to predict the likelihood of a donator donating again from the given data set. 
+
